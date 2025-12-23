@@ -1,41 +1,32 @@
 import { createDirectus, rest, authentication, staticToken } from '@directus/sdk';
+import type { DirectusSchema as GeneratedSchema } from '@/types/directus'; // <-- Importar el generado
 
-// Types para las colecciones principales
-export interface DirectusSchema {
-  accounts: Account[];
-  contacts: Contact[];
-  deals: Deal[];
-  deal_stages: DealStage[];
-  deal_items: DealItem[];
-  projects: Project[];
-  tasks: Task[];
-  task_time_entries: TaskTimeEntry[];
-  milestones: Milestone[];
-  tickets: Ticket[];
-  tickets_messages: TicketMessage[];
-  ticket_categories: TicketCategory[];
-  kb_articles: KBArticle[];
-  kb_categories: KBCategory[];
-  docs_pages: DocsPage[];
-  docs_spaces: DocsSpace[];
-  chat_channels: ChatChannel[];
-  chat_channel_members: ChatChannelMember[];
-  chat_messages: ChatMessage[];
-  services: Service[];
-  service_packages: ServicePackage[];
-  account_services: AccountService[];
-  account_members: AccountMember[];
-  statuses: Status[];
-  priorities: Priority[];
-  teams: Team[];
-  team_members: TeamMember[];
-  activities: Activity[];
-  countries: Country[];
-  directus_users: DirectusUser[];
-  directus_files: DirectusFile[];
+// Usa el schema generado para el cliente (tiene todos los operadores de filtro correctos)
+export const directusServer = createDirectus<GeneratedSchema>(
+  process.env.NEXT_PUBLIC_DIRECTUS_URL!
+)
+  .with(staticToken(process.env.DIRECTUS_ADMIN_TOKEN!))
+  .with(rest());
+
+export const directusClient = createDirectus<GeneratedSchema>(
+  process.env.NEXT_PUBLIC_DIRECTUS_URL!
+)
+  .with(authentication('cookie', { credentials: 'include' }))
+  .with(rest());
+
+export function createDirectusClient(token?: string) {
+  if (token) {
+    return createDirectus<GeneratedSchema>(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
+      .with(staticToken(token))
+      .with(rest());
+  }
+  return directusClient;
 }
 
-// Interfaces básicas (expandiremos según necesidad)
+// ========== Interfaces detalladas para uso en componentes ==========
+// Estas son más específicas y mejor documentadas que las generadas
+// Úsalas en tus componentes para mejor autocompletado
+
 export interface Account {
   id: string;
   name: string;
@@ -102,6 +93,20 @@ export interface DealItem {
   quantity?: number;
   unit_price?: number;
   notes?: string;
+}
+
+export interface Activity {
+  id: string;
+  account?: string;
+  deal?: string;
+  contact?: string;
+  owner: string;
+  type?: 'call' | 'meeting' | 'email' | 'follow_up' | 'note';
+  subject: string;
+  description?: string;
+  scheduled_at?: string;
+  completed_at?: string;
+  date_created?: string;
 }
 
 export interface Project {
@@ -342,20 +347,6 @@ export interface TeamMember {
   role?: string;
 }
 
-export interface Activity {
-  id: string;
-  account?: string;
-  deal?: string;
-  contact?: string;
-  owner: string;
-  type?: 'call' | 'meeting' | 'email' | 'follow_up' | 'note';
-  subject: string;
-  description?: string;
-  scheduled_at?: string;
-  completed_at?: string;
-  date_created?: string;
-}
-
 export interface Country {
   id: string;
   code: string;
@@ -382,28 +373,4 @@ export interface DirectusFile {
   type?: string;
   filesize?: number;
   uploaded_on?: string;
-}
-
-// Cliente Directus para servidor (con token estático)
-export const directusServer = createDirectus<DirectusSchema>(
-  process.env.NEXT_PUBLIC_DIRECTUS_URL!
-)
-  .with(staticToken(process.env.DIRECTUS_ADMIN_TOKEN!))
-  .with(rest());
-
-// Cliente Directus para cliente (con autenticación)
-export const directusClient = createDirectus<DirectusSchema>(
-  process.env.NEXT_PUBLIC_DIRECTUS_URL!
-)
-  .with(authentication('cookie', { credentials: 'include' }))
-  .with(rest());
-
-// Helper para crear cliente con token específico
-export function createDirectusClient(token?: string) {
-  if (token) {
-    return createDirectus<DirectusSchema>(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(staticToken(token))
-      .with(rest());
-  }
-  return directusClient;
 }

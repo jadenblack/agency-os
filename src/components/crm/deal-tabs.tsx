@@ -55,6 +55,7 @@ interface Props {
   activities: Activity[];
   servicePackages: ServicePackage[];
   users: User[];
+  currentUserId: string;
 }
 
 interface User {
@@ -63,7 +64,7 @@ interface User {
   last_name: string;
 }
 
-export default function DealTabs({ deal, dealItems, activities, servicePackages, users }: Props) {
+export default function DealTabs({ deal, dealItems, activities, servicePackages, users, currentUserId }: Props) {
 
   return (
     <Tabs defaultValue="details" className="space-y-4">
@@ -141,6 +142,7 @@ export default function DealTabs({ deal, dealItems, activities, servicePackages,
           dealId={deal.id}
           activities={activities}
           users={users}
+          currentUserId={currentUserId}
         />
       </TabsContent>
 

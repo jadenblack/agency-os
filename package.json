@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-types": "node scripts/generate-directus-types.js"
   },
   "dependencies": {
     "@directus/sdk": "^20.3.0",
@@ -26,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.0",
     "next-auth": "^5.0.0-beta.30",
@@ -38,11 +40,16 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@directus/extensions-sdk": "^17.0.4",
     "@tailwindcss/postcss": "^4",
+    "@types/archiver": "^7.0.0",
+    "@types/body-parser": "^1.19.6",
+    "@types/connect": "^3.4.38",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
     "tailwindcss": "^4",

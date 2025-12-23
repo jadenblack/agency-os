@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -22,6 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -42,6 +44,7 @@ interface User {
 interface Props {
   dealId: string;
   users: User[];
+  currentUserId?: string;
 }
 
 const activityTypes = [
@@ -52,7 +55,7 @@ const activityTypes = [
   { value: 'note', label: 'Nota' },
 ];
 
-export default function AddActivityDialog({ dealId, users }: Props) {
+export default function AddActivityDialog({ dealId, users, currentUserId }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,9 +66,10 @@ export default function AddActivityDialog({ dealId, users }: Props) {
       subject: '',
       type: undefined,
       description: '',
-      owner: '',
+      owner: currentUserId || '',
       scheduled_at: '',
       deal: dealId,
+      is_completed: false,
     },
   });
 
@@ -203,6 +207,27 @@ export default function AddActivityDialog({ dealId, users }: Props) {
                     <Textarea {...field} rows={4} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_completed"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Marcar como completada</FormLabel>
+                    <FormDescription>
+                      Se establecerá la fecha de finalización al momento actual
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />

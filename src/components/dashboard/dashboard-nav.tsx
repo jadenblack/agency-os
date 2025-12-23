@@ -25,6 +25,7 @@ const navigation = [
     name: 'CRM',
     icon: Users,
     children: [
+      { name: 'Dashboard', href: '/dashboard/crm' },
       { name: 'Cuentas', href: '/dashboard/crm/accounts' },
       { name: 'Contactos', href: '/dashboard/crm/contacts' },
       { name: 'Deals', href: '/dashboard/crm/deals' },

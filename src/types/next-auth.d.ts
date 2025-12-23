@@ -1,31 +1,37 @@
 import 'next-auth';
 
 declare module 'next-auth' {
-  interface User {
-    id: string;
-    email: string;
-    name?: string;
-    image?: string | null;
-    role?: string | null;
-    accessToken?: string;
-  }
-
   interface Session {
+    accessToken: string;
+    error?: string;
     user: {
       id: string;
       email: string;
-      name?: string;
-      image?: string | null;
-      role?: string;
+      name?: string | null;  // ← Acepta null
+      image?: string | null; // ← Acepta null
+      role?: string | null;  // ← Acepta null
     };
-    accessToken?: string;
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name?: string | null;      // ← Acepta null
+    image?: string | null;     // ← Acepta null
+    role?: string | null;      // ← Acepta null
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpires: number;
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    id?: string;
-    role?: string;
-    accessToken?: string;
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpires: number;
+    role?: string | null;      // ← Acepta null
+    id: string;
+    error?: string;
   }
 }

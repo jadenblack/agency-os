@@ -109,18 +109,19 @@ export interface DealItem {
 // ============= ACTIVITIES =============
 export interface Activity {
   id: string;
-  related_to: 'account' | 'deal' | 'contact' | null;
-  related_id?: string | null;
+  subject: string;
+  type?: 'call' | 'meeting' | 'email' | 'follow_up' | 'note' | null;
+  description?: string | null;
+  scheduled_at?: string | null;
+  completed_at?: string | null;
+  deal?: string | null;
+  account?: string | null;
+  contact?: string | null;
   owner: {
     id: string;
     first_name: string;
     last_name: string;
   } | string;
-  type?: 'call' | 'meeting' | 'email' | 'follow_up' | 'note' | null;
-  subject: string;
-  description?: string | null;
-  scheduled_at?: string | null;
-  completed_at?: string | null;
   archived_at?: string | null;
   date_created?: string;
   date_updated?: string;

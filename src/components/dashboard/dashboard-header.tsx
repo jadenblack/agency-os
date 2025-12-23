@@ -16,10 +16,10 @@ import { LogOut, Settings, User } from 'lucide-react';
 
 interface DashboardHeaderProps {
   user: {
-    name?: string;
+    name?: string | null;      // ← Acepta null
     email?: string;
-    image?: string | null;
-    role?: string;
+    image?: string | null;     // ← Ya estaba bien
+    role?: string | null;      // ← Acepta null
   };
 }
 
@@ -37,15 +37,15 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.image || undefined} alt={user.name} />
-                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  <AvatarImage src={user.image || undefined} alt={user.name || undefined} />
+                  <AvatarFallback>{getInitials(user.name || undefined)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user.name}</p>
+                  <p className="text-sm font-medium">{user.name || 'Usuario'}</p>
                   <p className="text-xs text-gray-500">{user.email}</p>
                   {user.role && (
                     <p className="text-xs text-gray-400">{user.role}</p>

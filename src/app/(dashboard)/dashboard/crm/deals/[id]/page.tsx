@@ -1,6 +1,7 @@
 import { directusServer } from '@/lib/directus';
 import { readItem, readItems, readUsers } from '@directus/sdk';
 import { notFound } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import DealHeader from '@/components/crm/deal-header';
 import DealTabs from '@/components/crm/deal-tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,11 @@ interface DealDetailPageProps {
 
 export default async function DealDetailPage({ params }: DealDetailPageProps) {
   const { id } = await params;
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    notFound();
+  }
 
   try {
     const deal = await directusServer.request(
@@ -58,8 +64,14 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
       })
     );
 
-    const allActivities = await directusServer.request(
+    // ACTUALIZADO: Filtrar activities por el campo "deal" correcto
+    const activities = await directusServer.request(
       readItems('activities', {
+        filter: {
+          deal: {
+            _eq: id,
+          },
+        },
         fields: [
           '*',
           'owner.id',
@@ -69,10 +81,6 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
         sort: ['-date_created'],
         limit: 100,
       })
-    );
-
-    const activities = allActivities.filter(
-      (activity: any) => activity.related_id === id && activity.related_to === 'deal'
     );
 
     // Obtener service packages para el selector
@@ -111,6 +119,7 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
           activities={activities as any}
           servicePackages={servicePackages as any}
           users={users as any}
+          currentUserId={session.user.id}
         />
       </div>
     );

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { directusServer } from '@/lib/directus';
-import { createItem } from '@directus/sdk';
+import { createItem, readItems } from '@directus/sdk';
 import { activitySchema } from '@/lib/validations/activity';
 
 export async function POST(request: NextRequest) {
@@ -15,6 +15,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = activitySchema.parse(body);
 
+    // Si se proporciona un deal, obtener automáticamente el account asociado
+    let accountId = validatedData.account;
+
+    if (validatedData.deal && !accountId) {
+      const deals = await directusServer.request(
+        readItems('deals', {
+          filter: {
+            id: {
+              _eq: validatedData.deal,
+            },
+          },
+          fields: ['account'],
+          limit: 1,
+        })
+      );
+
+      if (deals && deals.length > 0) {
+        accountId = deals[0].account as string;
+      }
+    }
+
+    // Si is_completed es true, establecer completed_at a la fecha actual
+    const completedAt = validatedData.is_completed ? new Date().toISOString() : undefined;
+
     const activity = await directusServer.request(
       createItem('activities', {
         subject: validatedData.subject,
@@ -22,8 +46,9 @@ export async function POST(request: NextRequest) {
         description: validatedData.description || undefined,
         owner: validatedData.owner,
         scheduled_at: validatedData.scheduled_at || undefined,
+        completed_at: completedAt,
         deal: validatedData.deal || undefined,
-        account: validatedData.account || undefined,
+        account: accountId || undefined,
         contact: validatedData.contact || undefined,
       })
     );

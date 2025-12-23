@@ -56,9 +56,10 @@ interface Props {
   dealId: string;
   activities: Activity[];
   users: User[];
+  currentUserId: string;
 }
 
-export default function DealActivitiesManager({ dealId, activities, users }: Props) {
+export default function DealActivitiesManager({ dealId, activities, users, currentUserId }: Props) {
   const router = useRouter();
   const [activityToDelete, setActivityToDelete] = useState<string | null>(null);
   const [activityToComplete, setActivityToComplete] = useState<string | null>(null);
@@ -143,7 +144,11 @@ export default function DealActivitiesManager({ dealId, activities, users }: Pro
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Historial de actividades</CardTitle>
-            <AddActivityDialog dealId={dealId} users={users} />
+            <AddActivityDialog
+              dealId={dealId}
+              users={users}
+              currentUserId={currentUserId}
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -171,6 +176,7 @@ export default function DealActivitiesManager({ dealId, activities, users }: Pro
                             variant="ghost"
                             size="sm"
                             onClick={() => setActivityToComplete(activity.id)}
+                            className="cursor-pointer hover:bg-green-100 hover:text-green-700" // <-- Agregar
                           >
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           </Button>
@@ -179,6 +185,7 @@ export default function DealActivitiesManager({ dealId, activities, users }: Pro
                           variant="ghost"
                           size="sm"
                           onClick={() => setActivityToDelete(activity.id)}
+                          className="cursor-pointer hover:bg-red-100 hover:text-red-700" // <-- Agregar
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

@@ -1,8 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { directusServer } from '@/lib/directus';
-import { createItem } from '@directus/sdk';
+import { createItem, readItems } from '@directus/sdk';
 import { contactSchema } from '@/lib/validations/contact';
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      );
+    }
+
+    const contacts = await directusServer.request(
+      readItems('contacts', {
+        fields: ['id', 'first_name', 'last_name', 'email', 'phone'],
+        sort: ['first_name', 'last_name'],
+      })
+    );
+
+    return NextResponse.json(contacts);
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener contactos' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
