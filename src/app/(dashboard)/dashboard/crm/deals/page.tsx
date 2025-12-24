@@ -23,7 +23,7 @@ interface AccountSimple {
 
 export default async function DealsPage() {
   // Obtener deals
-  const dealsData = await directusServer.request(
+const dealsData = await directusServer.request(
     readItems('deals', {
       fields: [
         'id',
@@ -32,17 +32,12 @@ export default async function DealsPage() {
         'probability',
         'expected_close_date',
         'date_created',
-        'account.id',
-        'account.name',
-        'contact.id',
-        'contact.first_name',
-        'contact.last_name',
-        'owner.id',
-        'owner.first_name',
-        'owner.last_name',
-        'stage.id',
-        'stage.key',
-        'stage.label',
+        {
+          account: ['id', 'name'],
+          contact: ['id', 'first_name', 'last_name'],
+          owner: ['id', 'first_name', 'last_name'],
+          stage: ['id', 'key', 'label'],
+        },
       ],
       sort: ['-date_created'],
     })

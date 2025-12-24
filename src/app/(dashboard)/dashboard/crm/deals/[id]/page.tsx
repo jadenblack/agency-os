@@ -23,27 +23,16 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
   }
 
   try {
-    const deal = await directusServer.request(
+const deal = await directusServer.request(
       readItem('deals', id, {
         fields: [
           '*',
-          'account.id',
-          'account.name',
-          'account.website',
-          'account.phone',
-          'account.email',
-          'contact.id',
-          'contact.first_name',
-          'contact.last_name',
-          'contact.email',
-          'contact.phone',
-          'owner.id',
-          'owner.first_name',
-          'owner.last_name',
-          'owner.email',
-          'stage.id',
-          'stage.key',
-          'stage.label',
+          {
+            account: ['id', 'name', 'website', 'phone', 'email'],
+            contact: ['id', 'first_name', 'last_name', 'email', 'phone'],
+            owner: ['id', 'first_name', 'last_name', 'email'],
+            stage: ['id', 'key', 'label'],
+          },
         ],
       })
     );
@@ -57,9 +46,9 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
         },
         fields: [
           '*',
-          'package.id',
-          'package.name',
-          'package.base_price',
+          {
+            package: ['id', 'name', 'base_price'],
+          },
         ],
       })
     );
@@ -74,9 +63,9 @@ export default async function DealDetailPage({ params }: DealDetailPageProps) {
         },
         fields: [
           '*',
-          'owner.id',
-          'owner.first_name',
-          'owner.last_name',
+          {
+            owner: ['id', 'first_name', 'last_name'],
+          },
         ],
         sort: ['-date_created'],
         limit: 100,

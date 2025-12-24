@@ -16,9 +16,10 @@ export default async function AccountsPage() {
         'email',
         'phone',
         'city',
-        'account_owner.first_name',
-        'account_owner.last_name',
         'date_created',
+        {
+          account_owner: ['first_name', 'last_name'],
+        },
       ],
       sort: ['-date_created'],
       limit: 100,

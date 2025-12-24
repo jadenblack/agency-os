@@ -18,7 +18,7 @@ export default async function PipelinePage() {
     })
   );
 
-  // Obtener deals con todas sus relaciones
+// Obtener deals con todas sus relaciones
   const deals = await directusServer.request(
     readItems('deals', {
       fields: [
@@ -26,17 +26,12 @@ export default async function PipelinePage() {
         'title',
         'value_eur',
         'probability',
-        'stage.id',
-        'stage.key',
-        'stage.label',
-        'account.id',
-        'account.name',
-        'contact.id',
-        'contact.first_name',
-        'contact.last_name',
-        'owner.id',
-        'owner.first_name',
-        'owner.last_name',
+        {
+          stage: ['id', 'key', 'label'],
+          account: ['id', 'name'],
+          contact: ['id', 'first_name', 'last_name'],
+          owner: ['id', 'first_name', 'last_name'],
+        },
       ],
       sort: ['-date_created'],
     })

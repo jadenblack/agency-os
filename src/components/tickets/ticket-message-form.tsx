@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { FileUploader } from '@/components/tickets/file-uploader';
 import { toast } from 'sonner';
-import { Send } from 'lucide-react';
 
 interface TicketMessageFormProps {
   ticketId: string;
@@ -19,6 +18,7 @@ export function TicketMessageForm({ ticketId }: TicketMessageFormProps) {
   const [body, setBody] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdMessageId, setCreatedMessageId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,65 +38,74 @@ export function TicketMessageForm({ ticketId }: TicketMessageFormProps) {
         },
         body: JSON.stringify({
           ticket: ticketId,
-          body: body.trim(),
+          body,
           is_internal: isInternal,
-          source: 'portal',
+          source: 'dashboard',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al enviar el mensaje');
+        const error = await response.json();
+        throw new Error(error.error || 'Error al enviar el mensaje');
       }
 
+      const data = await response.json();
+      setCreatedMessageId(data.id);
       toast.success('Mensaje enviado correctamente');
       setBody('');
       setIsInternal(false);
-      router.refresh();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al enviar el mensaje');
+      console.error('Error sending message:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al enviar el mensaje');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleUploadComplete = () => {
+    setCreatedMessageId(null);
+    router.refresh();
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Añadir mensaje</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Textarea
-              placeholder="Escribe tu mensaje aquí..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={4}
-              disabled={isSubmitting}
-            />
-          </div>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Textarea
+            placeholder="Escribe tu respuesta..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            disabled={isSubmitting}
+          />
+        </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_internal"
-              checked={isInternal}
-              onCheckedChange={(checked) => setIsInternal(checked as boolean)}
-              disabled={isSubmitting}
-            />
-            <Label htmlFor="is_internal" className="text-sm cursor-pointer">
-              Nota interna (no visible para el cliente)
-            </Label>
-          </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="is_internal"
+            checked={isInternal}
+            onCheckedChange={(checked) => setIsInternal(checked as boolean)}
+            disabled={isSubmitting}
+          />
+          <Label htmlFor="is_internal" className="text-sm font-normal cursor-pointer">
+            Nota interna (solo visible para el equipo)
+          </Label>
+        </div>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              <Send className="mr-2 h-4 w-4" />
-              {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        <Button type="submit" disabled={isSubmitting || !body.trim()}>
+          {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
+        </Button>
+      </form>
+
+      {createdMessageId && (
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-medium mb-3">Adjuntar archivos al mensaje</h3>
+          <FileUploader
+            messageId={createdMessageId}
+            onUploadComplete={handleUploadComplete}
+          />
+        </div>
+      )}
+    </div>
   );
 }

@@ -4,47 +4,31 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { TicketForm } from '@/components/tickets/ticket-form';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, readItem, authentication } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
+import { readItem } from '@directus/sdk';
 import { Ticket } from '@/types/tickets';
 
 async function getTicket(id: string): Promise<Ticket | null> {
   try {
     const session = await auth();
 
-    if (!session?.accessToken) {
+    if (!session?.user?.id) {
       return null;
     }
 
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
-    const ticket = await directus.request(
+    const ticket = await directusServer.request(
       readItem('tickets', id, {
         fields: [
           '*',
-          'account.id',
-          'account.name',
-          'assigned_to.id',
-          'assigned_to.first_name',
-          'assigned_to.last_name',
-          'status.id',
-          'status.key',
-          'status.label',
-          'priority.id',
-          'priority.key',
-          'priority.label',
-          'category.id',
-          'category.key',
-          'category.label',
-          'requester_contact.id',
-          'requester_contact.first_name',
-          'requester_contact.last_name',
-          'package.id',
-          'package.name',
-          'package.code',
+          {
+            account: ['id', 'name'],
+            assigned_to: ['id', 'first_name', 'last_name'],
+            status: ['id', 'key', 'label'],
+            priority: ['id', 'key', 'label'],
+            category: ['id', 'key', 'label'],
+            requester_contact: ['id', 'first_name', 'last_name'],
+            package: ['id', 'name', 'code'],
+          },
         ],
       })
     );

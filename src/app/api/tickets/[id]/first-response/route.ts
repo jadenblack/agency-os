@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, updateItem, authentication } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
+import { updateItem } from '@directus/sdk';
 
 export async function PATCH(
   request: NextRequest,
@@ -9,20 +10,14 @@ export async function PATCH(
   try {
     const session = await auth();
 
-    if (!session?.accessToken) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Actualizar first_response_at si aún no está establecido
-    const ticket = await directus.request(
+    const ticket = await directusServer.request(
       updateItem('tickets', id, {
         first_response_at: new Date().toISOString(),
       })

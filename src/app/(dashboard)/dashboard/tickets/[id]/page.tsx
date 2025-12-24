@@ -6,73 +6,89 @@ import { TicketHeader } from '@/components/tickets/ticket-header';
 import { TicketTimeline } from '@/components/tickets/ticket-timeline';
 import { TicketMessageForm } from '@/components/tickets/ticket-message-form';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, readItem, readItems, authentication } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
+import { readItem, readItems } from '@directus/sdk';
 import { TicketWithMessages } from '@/types/tickets';
 
 async function getTicket(id: string): Promise<TicketWithMessages | null> {
   try {
     const session = await auth();
 
-    if (!session?.accessToken) {
+    if (!session?.user?.id) {
       return null;
     }
 
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Obtener ticket
-    const ticket = await directus.request(
+    const ticket = await directusServer.request(
       readItem('tickets', id, {
         fields: [
           '*',
-          'account.id',
-          'account.name',
-          'assigned_to.id',
-          'assigned_to.first_name',
-          'assigned_to.last_name',
-          'status.id',
-          'status.key',
-          'status.label',
-          'priority.id',
-          'priority.key',
-          'priority.label',
-          'category.id',
-          'category.key',
-          'category.label',
-          'requester_contact.id',
-          'requester_contact.first_name',
-          'requester_contact.last_name',
-          'requester_contact.email',
-          'package.id',
-          'package.name',
-          'package.code',
+          {
+            account: ['id', 'name'],
+            assigned_to: ['id', 'first_name', 'last_name'],
+            status: ['id', 'key', 'label'],
+            priority: ['id', 'key', 'label'],
+            category: ['id', 'key', 'label'],
+            requester_contact: ['id', 'first_name', 'last_name', 'email'],
+            package: ['id', 'name', 'code'],
+          },
         ],
       })
     );
 
-    // Obtener mensajes del ticket
-    const messages = await directus.request(
+    // Obtener mensajes del ticket con archivos
+    const messages = await directusServer.request(
       readItems('tickets_messages', {
         filter: {
           ticket: { _eq: id },
         },
         fields: [
           '*',
-          'author.id',
-          'author.first_name',
-          'author.last_name',
+          {
+            author: ['id', 'first_name', 'last_name'],
+          },
         ],
         sort: ['date_created'],
         limit: -1,
       })
     );
 
+    // Obtener archivos de cada mensaje
+    const messagesWithFiles = await Promise.all(
+      messages.map(async (message) => {
+        const files = await directusServer.request(
+          readItems('ticket_message_files', {
+            filter: {
+              ticket_message: { _eq: message.id },
+            },
+            fields: [
+              'id',
+              'sort',
+              'date_created',
+              {
+                file: [
+                  'id',
+                  'filename_download',
+                  'type',
+                  'filesize',
+                  'title',
+                ],
+              },
+            ],
+            sort: ['sort'],
+          })
+        );
+
+        return {
+          ...message,
+          files,
+        };
+      })
+    );
+
     return {
       ...ticket,
-      messages,
+      messages: messagesWithFiles,
     } as TicketWithMessages;
   } catch (error) {
     console.error('Error fetching ticket:', error);
@@ -85,6 +101,7 @@ export default async function TicketDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await auth();
   const { id } = await params;
   const ticket = await getTicket(id);
 
@@ -115,7 +132,7 @@ export default async function TicketDetailPage({
 
       {/* Timeline de mensajes */}
       <div className="grid gap-6">
-        <TicketTimeline ticket={ticket} />
+        <TicketTimeline ticket={ticket} currentUserId={session?.user?.id} />
         
         {/* Formulario para nuevo mensaje */}
         <TicketMessageForm ticketId={ticket.id} />

@@ -2,22 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { FileUploader } from '@/components/tickets/file-uploader';
 import { toast } from 'sonner';
-import { Send } from 'lucide-react';
 
 interface TicketMessageFormClientProps {
   ticketId: string;
 }
 
-export function TicketMessageFormClient({
-  ticketId,
-}: TicketMessageFormClientProps) {
+export function TicketMessageFormClient({ ticketId }: TicketMessageFormClientProps) {
   const router = useRouter();
   const [body, setBody] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdMessageId, setCreatedMessageId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,52 +35,61 @@ export function TicketMessageFormClient({
         },
         body: JSON.stringify({
           ticket: ticketId,
-          body: body.trim(),
+          body,
           is_internal: false,
           source: 'portal',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al enviar el mensaje');
+        const error = await response.json();
+        throw new Error(error.error || 'Error al enviar el mensaje');
       }
 
+      const data = await response.json();
+      setCreatedMessageId(data.id);
       toast.success('Mensaje enviado correctamente');
       setBody('');
-      router.refresh();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al enviar el mensaje');
+      console.error('Error sending message:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al enviar el mensaje');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Responder</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Textarea
-              placeholder="Escribe tu respuesta aquí..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={4}
-              disabled={isSubmitting}
-            />
-          </div>
+  const handleUploadComplete = () => {
+    setCreatedMessageId(null);
+    router.refresh();
+  };
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              <Send className="mr-2 h-4 w-4" />
-              {isSubmitting ? 'Enviando...' : 'Enviar respuesta'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+  return (
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Textarea
+            placeholder="Escribe tu mensaje..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <Button type="submit" disabled={isSubmitting || !body.trim()}>
+          {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
+        </Button>
+      </form>
+
+      {createdMessageId && (
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-medium mb-3">Adjuntar archivos al mensaje</h3>
+          <FileUploader
+            messageId={createdMessageId}
+            onUploadComplete={handleUploadComplete}
+          />
+        </div>
+      )}
+    </div>
   );
 }

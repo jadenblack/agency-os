@@ -22,7 +22,7 @@ export default async function ContactDetailPage({ params }: ContactDetailPagePro
       })
     );
 
-    // Obtener accounts relacionadas via account_members
+  // Obtener accounts relacionadas via account_members
     const accountMembers = await directusServer.request(
       readItems('account_members', {
         filter: {
@@ -34,8 +34,9 @@ export default async function ContactDetailPage({ params }: ContactDetailPagePro
           'id',
           'job_title',
           'is_primary',
-          'account.id',
-          'account.name',
+          {
+            account: ['id', 'name'],
+          },
         ],
       })
     );
@@ -52,7 +53,9 @@ export default async function ContactDetailPage({ params }: ContactDetailPagePro
           'id',
           'title',
           'value_eur',
-          'stage.label',
+          {
+            stage: ['label'],
+          },
         ],
         sort: ['-date_created'],
       })

@@ -19,10 +19,12 @@ export default async function EditAccountPage({ params }: EditAccountPageProps) 
     const account = await directusServer.request(
       readItem('accounts', id, {
         fields: [
-          '*',
-          'account_owner.id',
-          'country.id',
-        ],
+  '*',
+  {
+    account_owner: ['id'],
+    country: ['id'],
+  },
+],
       })
     );
 

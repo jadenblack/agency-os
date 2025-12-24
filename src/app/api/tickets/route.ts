@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, readItems, createItem, authentication } from '@directus/sdk';
+import { readItems, createItem } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
 
 export async function GET(request: NextRequest) {
   // ... código existente del GET ...
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session?.accessToken || !session?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -35,17 +36,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear cliente con el token del usuario
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Obtener el estado "open" por defecto si no se proporciona
     let defaultStatusId = status;
     if (!defaultStatusId) {
-      const openStatus = await directus.request(
+      const openStatus = await directusServer.request(
         readItems('statuses', {
           filter: {
             _and: [
@@ -62,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Obtener la prioridad "medium" por defecto si no se proporciona
     let defaultPriorityId = priority;
     if (!defaultPriorityId) {
-      const mediumPriority = await directus.request(
+      const mediumPriority = await directusServer.request(
         readItems('priorities', {
           filter: {
             _and: [
@@ -92,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (assigned_to) ticketData.assigned_to = assigned_to;
     if (requester_contact) ticketData.requester_contact = requester_contact;
 
-    const ticket = await directus.request(
+    const ticket = await directusServer.request(
       createItem('tickets', ticketData)
     );
 

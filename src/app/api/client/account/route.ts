@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, readItems, authentication } from '@directus/sdk';
+import { readItems } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session?.accessToken || !session?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Obtener cuenta del usuario
-    const accountMembers = await directus.request(
+    const accountMembers = await directusServer.request(
       readItems('account_members', {
         filter: {
           user: { _eq: session.user.id },
         },
-        fields: ['account.id', 'account.name'],
+        fields: ['id', { account: ['id', 'name'] }],
         limit: 1,
       })
     );

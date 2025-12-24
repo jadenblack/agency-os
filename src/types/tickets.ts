@@ -46,6 +46,18 @@ export interface TicketMessage extends Omit<tickets_messagesItem, 'author'> {
     first_name: string;
     last_name: string;
   } | null;
+  files?: Array<{
+    id: string;
+    sort: number;
+    date_created: string;
+    file: {
+      id: string;
+      filename_download: string;
+      type: string;
+      filesize: number;
+      title?: string | null;
+    };
+  }>;
 }
 
 export interface TicketWithMessages extends Ticket {

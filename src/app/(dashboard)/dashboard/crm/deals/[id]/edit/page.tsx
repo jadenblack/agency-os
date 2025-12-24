@@ -20,10 +20,12 @@ export default async function EditDealPage({ params }: EditDealPageProps) {
       readItem('deals', id, {
         fields: [
           '*',
-          'account.id',
-          'contact.id',
-          'owner.id',
-          'stage.id',
+          {
+            account: ['id'],
+            contact: ['id'],
+            owner: ['id'],
+            stage: ['id'],
+          },
         ],
       })
     );

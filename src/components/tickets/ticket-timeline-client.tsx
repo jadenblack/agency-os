@@ -6,9 +6,10 @@ import { MessageSquare } from 'lucide-react';
 
 interface TicketTimelineClientProps {
   ticket: TicketWithMessages;
+  currentUserId?: string;
 }
 
-export function TicketTimelineClient({ ticket }: TicketTimelineClientProps) {
+export function TicketTimelineClient({ ticket, currentUserId }: TicketTimelineClientProps) {
   if (!ticket.messages || ticket.messages.length === 0) {
     return (
       <Card>

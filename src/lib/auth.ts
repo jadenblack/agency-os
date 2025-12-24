@@ -32,6 +32,20 @@ async function refreshAccessToken(token: any) {
     const refreshedTokens = await response.json();
 
     if (!response.ok) {
+      console.error('Error refreshing access token:', refreshedTokens);
+      
+      if (
+        response.status === 401 || 
+        response.status === 403 ||
+        refreshedTokens.errors?.[0]?.message?.includes('Invalid user credentials') ||
+        refreshedTokens.errors?.[0]?.extensions?.code === 'INVALID_CREDENTIALS'
+      ) {
+        return {
+          ...token,
+          error: 'RefreshTokenExpired',
+        };
+      }
+
       throw refreshedTokens;
     }
 
@@ -40,6 +54,7 @@ async function refreshAccessToken(token: any) {
       accessToken: refreshedTokens.data.access_token,
       refreshToken: refreshedTokens.data.refresh_token ?? token.refreshToken,
       accessTokenExpires: Date.now() + 15 * 60 * 1000,
+      error: undefined,
     };
   } catch (error) {
     console.error('Error refreshing access token:', error);
@@ -84,7 +99,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // Decodificar el JWT para obtener el roleId y userId
           const decodedToken = jwtDecode<DirectusJWT>(accessToken);
-          console.log('Decoded JWT:', decodedToken); // DEBUG
 
           // Usar directusServer (token admin) para obtener el nombre del rol
           const roles = await directusServer.request(
@@ -98,7 +112,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
 
           const roleName = roles && roles.length > 0 ? roles[0].name : null;
-          console.log('Role name from directus_roles:', roleName); // DEBUG
 
           // Usar directusServer para obtener datos del usuario
           const users = await directusServer.request(
@@ -112,7 +125,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
 
           const user = users && users.length > 0 ? users[0] : null;
-          console.log('User data from directus_users:', user); // DEBUG
 
           return {
             id: decodedToken.id,
@@ -133,8 +145,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Login inicial
       if (user) {
-        console.log('JWT callback - user:', user); // DEBUG
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
         token.accessTokenExpires = user.accessTokenExpires;
@@ -143,10 +155,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
 
+      // Token aún válido
       if (Date.now() < (token.accessTokenExpires as number)) {
         return token;
       }
 
+      // Token expirado, intentar refresh
       return refreshAccessToken(token);
     },
     async session({ session, token }) {
@@ -164,7 +178,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60, // 7 días
+    updateAge: 15 * 60, // Actualizar cada 15 minutos
   },
   secret: process.env.NEXTAUTH_SECRET,
 });

@@ -16,14 +16,21 @@ import { LogOut, Settings, User } from 'lucide-react';
 
 interface DashboardHeaderProps {
   user: {
-    name?: string | null;      // ← Acepta null
+    name?: string | null;
     email?: string;
-    image?: string | null;     // ← Ya estaba bien
-    role?: string | null;      // ← Acepta null
+    image?: string | null;
+    role?: string | null;
   };
 }
 
 export default function DashboardHeader({ user }: DashboardHeaderProps) {
+  const handleSignOut = async () => {
+    await signOut({ 
+      callbackUrl: '/login',
+      redirect: true 
+    });
+  };
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="flex items-center justify-between px-6 py-4">
@@ -63,7 +70,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={handleSignOut}
                 className="text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />

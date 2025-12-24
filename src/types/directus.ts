@@ -1,5 +1,5 @@
 // Auto-generated Directus Schema Types
-// Generated on: 2025-12-21T16:34:56.593Z
+// Generated on: 2025-12-24T17:50:09.069Z
 
 export interface DirectusSchema {
   account_members: account_membersItem[];
@@ -32,6 +32,7 @@ export interface DirectusSchema {
   team_members: team_membersItem[];
   teams: teamsItem[];
   ticket_categories: ticket_categoriesItem[];
+  ticket_message_files: ticket_message_filesItem[];
   tickets: ticketsItem[];
   tickets_messages: tickets_messagesItem[];
 }
@@ -87,6 +88,7 @@ export interface accountsItem {
   user_updated?: directus_usersItem | string | null;
   legal_name?: string | null;
   account_owner?: directus_usersItem | string | null;
+  account_members: any;
 }
 
 export interface activitiesItem {
@@ -455,6 +457,17 @@ export interface ticket_categoriesItem {
   date_updated?: string | null;
   user_created?: directus_usersItem | string | null;
   user_updated?: directus_usersItem | string | null;
+}
+
+export interface ticket_message_filesItem {
+  id: string;
+  user_created?: directus_usersItem | string | null;
+  date_created?: string | null;
+  user_updated?: directus_usersItem | string | null;
+  date_updated?: string | null;
+  sort?: number | null;
+  ticket_message?: tickets_messagesItem | string | null;
+  file?: directus_filesItem | string | null;
 }
 
 export interface ticketsItem {

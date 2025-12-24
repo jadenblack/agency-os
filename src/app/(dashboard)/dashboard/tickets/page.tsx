@@ -5,6 +5,8 @@ import { Plus } from 'lucide-react';
 import { TicketsTable } from '@/components/tickets/tickets-table';
 import { TicketsFilters } from '@/components/tickets/tickets-filter';
 
+export const dynamic = 'force-dynamic';
+
 export default function TicketsPage({
   searchParams,
 }: {

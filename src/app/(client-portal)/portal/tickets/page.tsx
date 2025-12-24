@@ -12,29 +12,23 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Plus } from 'lucide-react';
-import { createDirectus, rest, readItems, authentication } from '@directus/sdk';
+import { readItems } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
 import { Ticket } from '@/types/tickets';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+export const dynamic = 'force-dynamic';
+
 async function getClientTickets(userId: string): Promise<Ticket[]> {
   try {
-    const session = await auth();
-    if (!session?.accessToken) return [];
-
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
-    // Obtener cuenta del usuario
-    const accountMembers = await directus.request(
+    // Usar directusServer para evitar problemas de permisos complejos
+    const accountMembers = await directusServer.request(
       readItems('account_members', {
         filter: {
           user: { _eq: userId },
         },
-        fields: ['account.id'],
+        fields: ['id', { account: ['id'] }],
         limit: 1,
       })
     );
@@ -46,21 +40,18 @@ async function getClientTickets(userId: string): Promise<Ticket[]> {
     const accountId = (accountMembers[0].account as any).id;
 
     // Obtener tickets de la cuenta
-    const tickets = await directus.request(
+    const tickets = await directusServer.request(
       readItems('tickets', {
         filter: {
           account: { _eq: accountId },
         },
         fields: [
           '*',
-          'status.id',
-          'status.key',
-          'status.label',
-          'priority.id',
-          'priority.key',
-          'priority.label',
-          'category.id',
-          'category.label',
+          {
+            status: ['id', 'key', 'label'],
+            priority: ['id', 'key', 'label'],
+            category: ['id', 'label'],
+          },
         ],
         sort: ['-date_created'],
         limit: -1,

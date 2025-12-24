@@ -6,7 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import { TicketHeaderClient } from '@/components/tickets/ticket-header-client';
 import { TicketTimelineClient } from '@/components/tickets/ticket-timeline-client';
 import { TicketMessageFormClient } from '@/components/tickets/ticket-message-form-client';
-import { createDirectus, rest, readItem, readItems, authentication } from '@directus/sdk';
+import { readItem, readItems } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
 import { TicketWithMessages } from '@/types/tickets';
 
 async function getClientTicket(
@@ -14,22 +15,13 @@ async function getClientTicket(
   userId: string
 ): Promise<TicketWithMessages | null> {
   try {
-    const session = await auth();
-    if (!session?.accessToken) return null;
-
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Obtener cuenta del usuario
-    const accountMembers = await directus.request(
+    const accountMembers = await directusServer.request(
       readItems('account_members', {
         filter: {
           user: { _eq: userId },
         },
-        fields: ['account.id'],
+        fields: ['id', { account: ['id'] }],
         limit: 1,
       })
     );
@@ -41,22 +33,17 @@ async function getClientTicket(
     const accountId = (accountMembers[0].account as any).id;
 
     // Obtener ticket
-    const ticket = await directus.request(
+    const ticket = await directusServer.request(
       readItem('tickets', ticketId, {
         fields: [
           '*',
-          'account.id',
-          'account.name',
-          'status.id',
-          'status.key',
-          'status.label',
-          'priority.id',
-          'priority.key',
-          'priority.label',
-          'category.id',
-          'category.label',
-          'assigned_to.first_name',
-          'assigned_to.last_name',
+          {
+            account: ['id', 'name'],
+            status: ['id', 'key', 'label'],
+            priority: ['id', 'key', 'label'],
+            category: ['id', 'label'],
+            assigned_to: ['first_name', 'last_name'],
+          },
         ],
       })
     );
@@ -67,7 +54,7 @@ async function getClientTicket(
     }
 
     // Obtener mensajes (solo los no internos)
-    const messages = await directus.request(
+    const messages = await directusServer.request(
       readItems('tickets_messages', {
         filter: {
           _and: [
@@ -75,15 +62,48 @@ async function getClientTicket(
             { is_internal: { _eq: false } },
           ],
         },
-        fields: ['*', 'author.id', 'author.first_name', 'author.last_name'],
+        fields: ['*', { author: ['id', 'first_name', 'last_name'] }],
         sort: ['date_created'],
         limit: -1,
       })
     );
 
+    // Obtener archivos de cada mensaje
+    const messagesWithFiles = await Promise.all(
+      messages.map(async (message) => {
+        const files = await directusServer.request(
+          readItems('ticket_message_files', {
+            filter: {
+              ticket_message: { _eq: message.id },
+            },
+            fields: [
+              'id',
+              'sort',
+              'date_created',
+              {
+                file: [
+                  'id',
+                  'filename_download',
+                  'type',
+                  'filesize',
+                  'title',
+                ],
+              },
+            ],
+            sort: ['sort'],
+          })
+        );
+
+        return {
+          ...message,
+          files,
+        };
+      })
+    );
+
     return {
       ...ticket,
-      messages,
+      messages: messagesWithFiles,
     } as TicketWithMessages;
   } catch (error) {
     console.error('Error fetching client ticket:', error);
@@ -124,7 +144,7 @@ export default async function ClientTicketDetailPage({
 
       {/* Timeline de mensajes */}
       <div className="grid gap-6">
-        <TicketTimelineClient ticket={ticket} />
+        <TicketTimelineClient ticket={ticket} currentUserId={session.user.id} />
 
         {/* Formulario para nuevo mensaje (solo si no está cerrado) */}
         {ticket.status.key !== 'closed' && (

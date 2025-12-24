@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { createDirectus, rest, createItem, authentication } from '@directus/sdk';
+import { createItem } from '@directus/sdk';
+import { directusServer } from '@/lib/directus';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session?.accessToken || !session?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -20,14 +21,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL!)
-      .with(authentication('json'))
-      .with(rest());
-
-    await directus.setToken(session.accessToken);
-
     // Crear mensaje
-    const message = await directus.request(
+    const message = await directusServer.request(
       createItem('tickets_messages', {
         ticket,
         body: messageBody,

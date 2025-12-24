@@ -22,11 +22,10 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
       readItem('accounts', id, {
         fields: [
           '*',
-          'account_owner.id',
-          'account_owner.first_name',
-          'account_owner.last_name',
-          'account_owner.email',
-          'country.name',
+          {
+            account_owner: ['id', 'first_name', 'last_name', 'email'],
+            country: ['name'],
+          },
         ],
       })
     );
@@ -43,7 +42,9 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
           'id',
           'title',
           'value_eur',
-          'stage.label',
+          {
+            stage: ['label'],
+          },
         ],
         sort: ['-date_created'],
       })
@@ -61,14 +62,10 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
           'id',
           'job_title',
           'is_primary',
-          'user.id',
-          'user.first_name',
-          'user.last_name',
-          'user.email',
-          'contact.id',
-          'contact.first_name',
-          'contact.last_name',
-          'contact.email',
+          {
+            user: ['id', 'first_name', 'last_name', 'email'],
+            contact: ['id', 'first_name', 'last_name', 'email'],
+          },
         ],
         sort: ['-is_primary'],
       })
@@ -82,7 +79,13 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
             _eq: id,
           },
         },
-        fields: ['*', 'status.label', 'owner.first_name', 'owner.last_name'],
+        fields: [
+          '*',
+          {
+            status: ['label'],
+            owner: ['first_name', 'last_name'],
+          },
+        ],
       })
     );
 
@@ -94,54 +97,59 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
             _eq: id,
           },
         },
-        fields: ['*', 'status.label', 'priority.label', 'assigned_to.first_name', 'assigned_to.last_name'],
+        fields: [
+          '*',
+          {
+            status: ['label'],
+            priority: ['label'],
+            assigned_to: ['first_name', 'last_name'],
+          },
+        ],
       })
     );
 
-    // ... después de obtener tickets, antes del return
+    // Obtener usuarios para añadir al equipo
+    const users = await directusServer.request(
+      readUsers({
+        fields: ['id', 'first_name', 'last_name'],
+        filter: {
+          status: {
+            _eq: 'active',
+          },
+        },
+      })
+    );
 
-// Obtener usuarios para añadir al equipo
-const users = await directusServer.request(
-  readUsers({
-    fields: ['id', 'first_name', 'last_name'],
-    filter: {
-      status: {
-        _eq: 'active',
-      },
-    },
-  })
-);
+    // Obtener contactos disponibles
+    const contacts = await directusServer.request(
+      readItems('contacts', {
+        fields: ['id', 'first_name', 'last_name', 'email'],
+        sort: ['first_name'],
+      })
+    );
 
-// Obtener contactos disponibles
-const contacts = await directusServer.request(
-  readItems('contacts', {
-    fields: ['id', 'first_name', 'last_name', 'email'],
-    sort: ['first_name'],
-  })
-);
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/dashboard/crm/accounts">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver a Cuentas
+          </Link>
+        </Button>
 
-return (
-  <div className="space-y-6">
-    <Button variant="ghost" size="sm" asChild>
-      <Link href="/dashboard/crm/accounts">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver a Cuentas
-      </Link>
-    </Button>
+        <AccountHeader account={account as any} />
 
-    <AccountHeader account={account as any} />
-
-    <AccountTabs 
-      account={account as any} 
-      deals={deals as any}
-      members={members as any}
-      projects={projects as any}
-      tickets={tickets as any}
-      users={users as any}
-      contacts={contacts as any}
-    />
-  </div>
-);
+        <AccountTabs 
+          account={account as any} 
+          deals={deals as any}
+          members={members as any}
+          projects={projects as any}
+          tickets={tickets as any}
+          users={users as any}
+          contacts={contacts as any}
+        />
+      </div>
+    );
   } catch (error) {
     notFound();
   }
